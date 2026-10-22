@@ -1,0 +1,27 @@
+# Terraform state files (contain sensitive infra details)
+*.tfstate
+*.tfstate.*
+terraform.tfstate.d/
+
+.terraform.lock.hcl
+
+# Terraform provider binaries
+.terraform/
+
+# Variable files that may contain secrets
+*.tfvars
+*.tfvars.json
+
+# Private keys
+terra-key-ansible
+*.pem
+terra-key-ansible.pub
+
+# OS files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
