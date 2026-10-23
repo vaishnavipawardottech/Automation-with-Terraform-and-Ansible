@@ -1,0 +1,10 @@
+- name: install Docker on all machines
+  hosts: workers
+  become: true
+  roles:
+    - role: docker
+      docker_users:
+        - ubuntu
+        - ec2-user
+
+      docker_service_enabled: true
