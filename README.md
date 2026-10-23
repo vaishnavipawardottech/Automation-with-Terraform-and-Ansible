@@ -207,7 +207,7 @@ sudo apt install -y ansible
 ansible --version
 ```
 
-## 5. Copy the inventory, key, and playbooks to the control node
+## 5. Copy the inventory and key to the control node
 
 Run these commands from your workstation, replacing
 `<CONTROL_NODE_PUBLIC_IP>` with the public IP address of the control node:
@@ -220,10 +220,6 @@ scp -i terraform/terra-key-ansible \
 scp -i terraform/terra-key-ansible \
   terraform/terra-key-ansible \
   ubuntu@<CONTROL_NODE_PUBLIC_IP>:/home/ubuntu/terra-key-ansible
-
-scp -i terraform/terra-key-ansible -r \
-  playbooks \
-  ubuntu@<CONTROL_NODE_PUBLIC_IP>:/home/ubuntu/
 ```
 
 On the control node, secure the copied key:
@@ -246,7 +242,75 @@ ansible_host_key_checking=false
 instances may be recreated. For a longer-lived environment, prefer host-key
 verification instead of disabling this protection.
 
-## 6. Verify connectivity
+## 6. Create the Ansible role
+
+Ansible roles are reusable units that organize tasks, handlers, variables,
+templates, and files. The `ansible-galaxy init` command creates the standard
+role directory structure automatically.
+
+Connect to the control node and create the role structure:
+
+```bash
+ssh -i terraform/terra-key-ansible ubuntu@<CONTROL_NODE_PUBLIC_IP>
+
+mkdir -p ~/playbooks
+cd ~/playbooks
+ansible-galaxy init roles/docker
+```
+
+This creates a structure similar to:
+
+```text
+playbooks/roles/docker/
+├── defaults/main.yml
+├── handlers/main.yml
+├── meta/main.yml
+├── README.md
+├── tasks/main.yml
+├── tests/
+│   ├── inventory
+│   └── test.yml
+├── vars/main.yml
+├── files/
+└── templates/
+```
+
+Add the role's implementation under the generated directories. For this
+project, the role includes:
+
+- `tasks/main.yml` to select the operating-system-specific task file;
+- `tasks/install_ubuntu.yml` for Ubuntu;
+- `tasks/install_redhat.yml` for Red Hat;
+- `tasks/install_amazon.yml` for Amazon Linux; and
+- `handlers/main.yml` for restarting Docker when required.
+
+The playbook uses the role through `roles/docker`:
+
+```yaml
+- name: install Docker on all machines
+  hosts: workers
+  become: true
+  roles:
+    - role: docker
+```
+
+### Optional shortcut: copy the completed role from this repository
+
+Instead of creating and filling the role files manually, copy the completed
+playbooks directory from your workstation:
+
+```bash
+scp -i terraform/terra-key-ansible -r \
+  playbooks \
+  ubuntu@<CONTROL_NODE_PUBLIC_IP>:/home/ubuntu/
+```
+
+This copies `install_docker.yml` and the already implemented
+`roles/docker` role to the control node. If you already ran
+`ansible-galaxy init`, replace the generated role with the repository version
+or copy only the missing task and handler files.
+
+## 7. Verify connectivity
 
 From the control node, test all worker hosts:
 
@@ -266,7 +330,7 @@ ansible -i ~/inventory.ini amazon -m ping
 The control node is configured with `ansible_connection=local`, so it does not
 need an SSH connection to itself.
 
-## 7. Run the Ansible Docker playbook
+## 8. Run the Ansible Docker playbook
 
 From the control node:
 
