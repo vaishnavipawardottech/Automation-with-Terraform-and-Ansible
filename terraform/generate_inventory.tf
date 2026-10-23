@@ -26,14 +26,3 @@ resource "local_file" "ansible_inventory" {
   file_permission = "0644"
 }
 
-# Bootstrap inventory — used ONCE FROM your laptop to configure the control
-# node (install Ansible, push the SSH key, clone the repo). Public IP + key.
-resource "local_file" "bootstrap_inventory" {
-  content = templatefile("${path.module}/templates/bootstrap.tpl", {
-    ssh_key_path = var.ssh_key_path
-    control      = local.control_hosts
-  })
-
-  filename        = "${path.module}/../inventories/dev/bootstrap.ini"
-  file_permission = "0644"
-}
